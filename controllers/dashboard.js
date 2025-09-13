@@ -1,5 +1,6 @@
 import express from "express";
 import Customerdb from "../models/customer.js";
+import Claimdb from "../models/claim.js";
 
 export const DashboardCustomer = async (_,res) => {
     try {
@@ -175,6 +176,48 @@ export const getCustomerDetails = async (_,res) => {
     try{
         const customers = await Customerdb.find();
         res.status(200).json({customers});
+    }
+    catch(e){
+        res.status(500).json(e);
+    }
+}
+
+export const CalculateDashboardVals = async (_,res) => {
+    try{
+        const customers = await Customerdb.find();
+
+        const totalCustomers = customers.length;
+
+        let totalPolicies=0;
+        let totalClaims=0;
+
+        customers.forEach(cust=>{
+            if(cust.policy.length>0){
+                totalPolicies+=cust.policy.length;
+                cust.policy.forEach(claims=>{
+                    if(claims.claim){
+                        totalClaims++;
+                    }
+                });
+            }
+        });
+
+        const now = new Date();
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+
+        const lastMonthClaims = await Claimdb.find({
+        claimDate: { $gte: thirtyDaysAgo, $lte: now }
+        });
+
+        res.status(200).json({
+            totalCustomers,
+            totalPolicies,
+            totalClaims,
+            lastMonthClaims: lastMonthClaims.length
+        });
+    
     }
     catch(e){
         res.status(500).json(e);
