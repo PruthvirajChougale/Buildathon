@@ -250,8 +250,14 @@ export const CalculateDashboardVals = async (_,res) => {
         thirtyDaysAgo.setDate(now.getDate() - 30);
 
         const lastMonthClaims = await Claimdb.find({
-        claimDate: { $gte: thirtyDaysAgo, $lte: now }
+            claimDate: {
+                $elemMatch: {
+                $gte: thirtyDaysAgo.toISOString(),
+                $lte: now.toISOString()
+                }
+            }
         });
+
 
         res.status(200).json({
             totalCustomers,
