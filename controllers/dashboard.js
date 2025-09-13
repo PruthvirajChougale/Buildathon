@@ -2,7 +2,55 @@ import express from "express";
 import Customerdb from "../models/customer.js";
 import Claimdb from "../models/claim.js";
 
-export const DashboardCustomer = async (_,res) => {
+// export const DashboardCustomer = async (_,res) => {
+//     try {
+//         const customers = await Customerdb.find();
+
+//         const now = new Date();
+//         now.setHours(0, 0, 0, 0); // normalize current date
+
+//         const result = customers
+//             .map(customer => {
+//             const renewalDiffs = customer.policy
+//                 .map(policy => {
+//                 if (!policy.renewalDate) return null;
+
+//                 // Parse dd-mm-yyyy format
+//                 const [day, month, year] = policy.renewalDate.split("-");
+//                 const rDate = new Date(year, month - 1, day);
+//                 rDate.setHours(0, 0, 0, 0);
+
+//                 const diffMs = rDate - now;
+//                 const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+//                 return (diffDays >= 0 && diffDays <= 7) ? diffDays : null;
+//                 })
+//                 .filter(d => d !== null);
+
+//             if (renewalDiffs.length === 0) return null;
+
+//             const minDays = Math.min(...renewalDiffs);
+
+//             return {
+//                 name: customer.name,
+//                 contact: customer.contact,
+//                 mailId: customer.mailId,
+//                 nextRenewalIn: minDays,
+//                 policyNumber:customer.policy.policyNumber,
+//                 premium:customer.policy.premium,
+//                 policies:customer.policy.length
+//             };
+//             })
+//             .filter(c => c !== null);
+
+//         res.json(result);
+//     } catch (e) {
+//         console.error(e);
+//         res.status(500).json({ message: "Internal server error" });
+//     }
+// }
+
+export const DashboardCustomer = async (_, res) => {
     try {
         const customers = await Customerdb.find();
 
@@ -11,35 +59,40 @@ export const DashboardCustomer = async (_,res) => {
 
         const result = customers
             .map(customer => {
-            const renewalDiffs = customer.policy
-                .map(policy => {
-                if (!policy.renewalDate) return null;
+                const policiesWithDiff = customer.policy
+                    .map(policy => {
+                        if (!policy.renewalDate) return null;
 
-                // Parse dd-mm-yyyy format
-                const [day, month, year] = policy.renewalDate.split("-");
-                const rDate = new Date(year, month - 1, day);
-                rDate.setHours(0, 0, 0, 0);
+                        // Parse dd-mm-yyyy format
+                        const [day, month, year] = policy.renewalDate.split("-");
+                        const rDate = new Date(year, month - 1, day);
+                        rDate.setHours(0, 0, 0, 0);
 
-                const diffMs = rDate - now;
-                const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                        const diffMs = rDate - now;
+                        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-                return (diffDays >= 0 && diffDays <= 7) ? diffDays : null;
-                })
-                .filter(d => d !== null);
+                        return (diffDays >= 0 && diffDays <= 7)
+                            ? { diffDays, policy }
+                            : null;
+                    })
+                    .filter(d => d !== null);
 
-            if (renewalDiffs.length === 0) return null;
+                if (policiesWithDiff.length === 0) return null;
 
-            const minDays = Math.min(...renewalDiffs);
+                // Find policy with nearest renewal
+                const nextPolicy = policiesWithDiff.reduce((a, b) =>
+                    a.diffDays < b.diffDays ? a : b
+                );
 
-            return {
-                name: customer.name,
-                contact: customer.contact,
-                mailId: customer.mailId,
-                nextRenewalIn: minDays,
-                policyNumber:customer.policy.policyNumber,
-                premium:customer.policy.premium,
-                policies:customer.policy.length
-            };
+                return {
+                    name: customer.name,
+                    contact: customer.contact,
+                    mailId: customer.mailId,
+                    nextRenewalIn: nextPolicy.diffDays,
+                    policyNumber: nextPolicy.policy.policyNumber,
+                    premium: nextPolicy.policy.premium,
+                    policies: customer.policy.length
+                };
             })
             .filter(c => c !== null);
 
@@ -48,7 +101,8 @@ export const DashboardCustomer = async (_,res) => {
         console.error(e);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 export const AddUser = async (req, res) => {
     try {
