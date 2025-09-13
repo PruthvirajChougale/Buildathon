@@ -149,28 +149,70 @@ export const AddUser = async (req, res) => {
 //     }
 // }
 
-export const Claim = async (req,res) => {//mailId,status
-    try{
-        const claim = req.body;
-        const user = await Customerdb.findOne({mailId:claim.mailId});
-        if(user){
-            const policy = user.policy.find(p => p.name === claim.policy_name);
-            if(!policy){
-                res.status(400).json({message:"Policy not found"});
-            }
-            policy.status = claim.status;
-            policy.claim=true;
-            await user.save();
-            res.status(200).json({message:"Policy status updated"});
-        }
-        else{
-            res.status(400).json({message:"User doesn't exist"});
-        }
+// export const Claim = async (req,res) => {//mailId,status,policyName
+//     try{
+//         const claim = req.body;
+//         const user = await Customerdb.findOne({mailId:claim.mailId});
+//         if(user){
+//             const policy = user.policy.find(p => p.policyName === claim.policyName);
+//             if(!policy){
+//                 res.status(400).json({message:"Policy not found"});
+//             }
+//             policy.status = claim.status;
+//             policy.claim=true;
+//             let claimDoc = await Claimdb.find();
+//             if (!claimDoc) {
+//                 claimDoc = new Claimdb({ claimDate: [] });
+//             }
+//             const currDate = new Date().toISOString();
+//             claimDoc.claimDate.push(currDate);
+//             await claimDoc.save();
+//             await user.save();
+//             res.status(200).json({message:"Policy status updated"});
+//         }
+//         else{
+//             res.status(400).json({message:"User doesn't exist"});
+//         }
+//     }
+//     catch(e){
+//         res.status(500).json({message:e});
+//     }
+// }
+
+export const Claim = async (req, res) => {
+  try {
+    const { mailId, status, policyName } = req.body;
+    const user = await Customerdb.findOne({ mailId });
+
+    if (!user) {
+      return res.status(400).json({ message: "User doesn't exist" });
     }
-    catch(e){
-        res.json(500).json({message:e});
+
+    // match policy (check your DB field name!)
+    const policy = user.policy.find(p => p.policyName === policyName);
+    if (!policy) {
+      return res.status(400).json({ message: "Policy not found" });
     }
-}
+
+    // update policy
+    policy.status = status;
+    policy.claim = true;
+    await user.save();
+
+    // update Claimdb
+    let claimDoc = await Claimdb.findOne();
+    if (!claimDoc) {
+      claimDoc = new Claimdb({ claimDate: [] });
+    }
+    claimDoc.claimDate.push(new Date().toISOString());
+    await claimDoc.save();
+
+    res.status(200).json({ message: "Policy status updated & claim recorded" });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
 
 export const getCustomerDetails = async (_,res) => {
     try{
