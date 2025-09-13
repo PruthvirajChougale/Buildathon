@@ -12,7 +12,7 @@ const CustomerSchema = new mongoose.Schema({
         insuranceCompany:{type:String,require:true},
         policyType:{type:String,require:true},
         premium:{type:Number},
-        policyName:{type:String,unique:true},
+        policyName:{type:String},
         startDate:{type:String},
         renewalDate:{type:String},
         nomineeName:{type:String,require:true},

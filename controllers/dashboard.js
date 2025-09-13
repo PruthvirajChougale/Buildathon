@@ -35,7 +35,10 @@ export const DashboardCustomer = async (_,res) => {
                 name: customer.name,
                 contact: customer.contact,
                 mailId: customer.mailId,
-                nextRenewalIn: minDays
+                nextRenewalIn: minDays,
+                policyNumber:customer.policyNumber,
+                premium:customer.premium,
+                policies:customer.policy.length
             };
             })
             .filter(c => c !== null);
@@ -45,7 +48,6 @@ export const DashboardCustomer = async (_,res) => {
         console.error(e);
         res.status(500).json({ message: "Internal server error" });
     }
-
 }
 
 export const AddUser = async (req, res) => {
