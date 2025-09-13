@@ -1,14 +1,15 @@
 import express from "express";
 const router = express.Router();
-import { AddPolicy, AddUser, Claim, DashboardCustomer } from "../controllers/dashboard.js";
+import { AddUser, Claim, DashboardCustomer, getCustomerDetails } from "../controllers/dashboard.js";
 import SignupUser from "../controllers/signup.js";
 import LoginUser from "../controllers/login.js";
 
 router.get("/dashboard-customer",DashboardCustomer);
 router.post("/add-customer",AddUser);
-router.put("/add-policy",AddPolicy);
+//router.put("/add-policy",AddPolicy);
 router.put("/claim",Claim);
 router.post("/signup",SignupUser);
 router.post("/login",LoginUser);
+router.get("/customer-details",getCustomerDetails);
 
 export default router;

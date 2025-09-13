@@ -47,52 +47,106 @@ export const DashboardCustomer = async (_,res) => {
 
 }
 
-export const AddUser = async (req,res) => {//name,contact,mailId
-    try{
+export const AddUser = async (req, res) => {
+    try {
         const userDetails = req.body;
-        const user = await Customerdb.findOne({mailId:userDetails.mailId});
-        if(user){
-            res.status(400).json({message:"User already exist"});
-        }
 
-        const customer = new Customerdb({
-            name:userDetails.name,
-            contact:userDetails.contact,
-            mailId:userDetails.mailId
-        });
+        let user = await Customerdb.findOne({ mailId: userDetails.mailId });
 
-        await customer.save();
-        res.status(200).json({message:"Customer saved"});
-    }
-    catch(e){
-        console.log(e);
-        res.status(500).json({message:e});
-    }
-}
+        const policyData = {
+            premium: userDetails.premium,
+            policyType: userDetails.policyType,
+            policyName: userDetails.policyName,
+            startDate: userDetails.startDate,
+            renewalDate: userDetails.renewalDate,
+            claim: false,
+            policyNumber: userDetails.policyNumber,
+            insuranceCompany: userDetails.insuranceCompany,
+            nomineeName: userDetails.nomineeName,
+            relation: userDetails.relation,
+            nomineeContact: userDetails.nomineeContact,
+        };
 
-export const AddPolicy = async (req,res) => {//mailId,policy
-    try{
-        const newPolicy = req.body;
-        const user = await Customerdb.findOne({mailId:newPolicy.mailId});
-        if(user){
-            user.policy.push({
-                premium:newPolicy.premium,
-                policy_name:newPolicy.policy_name,
-                joinDate:newPolicy.joinDate,
-                renewalDate:newPolicy.renewalDate,
-                claim:false
-            });
+        if (user) {
+            user.policy.push(policyData);
             await user.save();
-            res.status(200).json({message:"Policy added"});
+            res.status(200).json({ message: "Policy added to existing user" });
+        } else {
+            const newCustomer = new Customerdb({
+                name: userDetails.name,
+                contact: userDetails.contact,
+                alternateContact: userDetails.alternateContact,
+                mailId: userDetails.mailId,
+                birthDate: userDetails.birthDate,
+                gender: userDetails.gender,
+                policy: [policyData],
+            });
+
+            await newCustomer.save();
+            res.status(200).json({ message: "New user and policy saved" });
         }
-        else{
-            res.status(400).json({message:"User doesn't exist"});
-        }
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({ message: "Internal server error" });
     }
-    catch(e){
-        res.status(400).json(e);
-    }
-}
+};
+
+
+// export const AddUser = async (req,res) => {//name,contact,mailId
+//     try{
+//         const userDetails = req.body;
+//         const user = await Customerdb.findOne({mailId:userDetails.mailId});
+//         if(user){
+//             res.status(400).json({message:"User already exist"});
+//         }
+
+//         const customer = new Customerdb({
+//             name:userDetails.name,
+//             contact:userDetails.contact,
+//             alternateContact:userDetails.alternateContact,
+//             mailId:userDetails.mailId,
+//             birthDate:userDetails.birthDate,
+//             gender:userDetails.gender,
+//         });
+
+//         await customer.save();
+//         res.status(200).json({message:"Customer saved"});
+//     }
+//     catch(e){
+//         console.log(e);
+//         res.status(500).json({message:e});
+//     }
+// }
+
+// export const AddPolicy = async (req,res) => {//mailId,policy
+//     try{
+//         const newPolicy = req.body;
+//         const user = await Customerdb.findOne({mailId:newPolicy.mailId});
+//         if(user){
+//             user.policy.push({
+//                 premium:newPolicy.premium,
+//                 policyType:newPolicy.policyType,
+//                 policyName:newPolicy.policyName,
+//                 startDate:newPolicy.startDate,
+//                 renewalDate:newPolicy.renewalDate,
+//                 claim:false,
+//                 policyNumber:newPolicy.policyNumber,
+//                 insuranceCompany:newPolicy.insuranceCompany,
+//                 nomineeName:newPolicy.nomineeName,
+//                 relation:newPolicy.relation,
+//                 nomineeContact:newPolicy.nomineeContact,
+//             });
+//             await user.save();
+//             res.status(200).json({message:"Policy added"});
+//         }
+//         else{
+//             res.status(400).json({message:"User doesn't exist"});
+//         }
+//     }
+//     catch(e){
+//         res.status(400).json(e);
+//     }
+// }
 
 export const Claim = async (req,res) => {//mailId,status
     try{
@@ -114,5 +168,15 @@ export const Claim = async (req,res) => {//mailId,status
     }
     catch(e){
         res.json(500).json({message:e});
+    }
+}
+
+export const getCustomerDetails = async (_,res) => {
+    try{
+        const customers = await Customerdb.find();
+        res.status(200).json({customers});
+    }
+    catch(e){
+        res.status(500).json(e);
     }
 }
