@@ -36,8 +36,8 @@ export const DashboardCustomer = async (_,res) => {
                 contact: customer.contact,
                 mailId: customer.mailId,
                 nextRenewalIn: minDays,
-                policyNumber:customer.policyNumber,
-                premium:customer.premium,
+                policyNumber:customer.policy.policyNumber,
+                premium:customer.policy.premium,
                 policies:customer.policy.length
             };
             })
