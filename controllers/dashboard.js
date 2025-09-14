@@ -1,6 +1,7 @@
 import express from "express";
 import Customerdb from "../models/customer.js";
 import Claimdb from "../models/claim.js";
+import Policydb from "../models/policy.js";
 
 // export const DashboardCustomer = async (_,res) => {
 //     try {
@@ -270,15 +271,39 @@ export const Claim = async (req, res) => {
 };
 
 
-export const getCustomerDetails = async (_,res) => {
-    try{
+// export const getCustomerDetails = async (_,res) => {
+//     try{
+//         const customers = await Customerdb.find();
+//         res.status(200).json({customers});
+//     }
+//     catch(e){
+//         res.status(500).json(e);
+//     }
+// }
+
+export const getCustomerDetails = async (_, res) => {
+    try {
         const customers = await Customerdb.find();
-        res.status(200).json({customers});
-    }
-    catch(e){
+
+        // For each customer, fetch full policy details
+        const customersWithPolicies = await Promise.all(
+            customers.map(async (customer) => {
+                const fullPolicies = await Promise.all(
+                    customer.policy.map(async (p) => {
+                        const policyDetails = await Policydb.findOne({ policyName: p.policyName });
+                        return { ...p.toObject(), details: policyDetails };
+                    })
+                );
+                return { ...customer.toObject(), policy: fullPolicies };
+            })
+        );
+
+        res.status(200).json({ customers: customersWithPolicies });
+    } catch (e) {
         res.status(500).json(e);
     }
-}
+};
+
 
 export const CalculateDashboardVals = async (_,res) => {
     try{
@@ -325,5 +350,29 @@ export const CalculateDashboardVals = async (_,res) => {
     }
     catch(e){
         res.status(500).json(e);
+    }
+}
+
+export const AllPolicies = async (req, res) => {
+    try {
+        const policies = await Policydb.find();
+        res.status(200).json(policies);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching policies", error });
+    }
+}
+
+export const PolicyByName = async (req, res) => {
+    try {
+        const { policyName } = req.body;
+        const policy = await Policydb.findOne({ policyName });
+
+        if (!policy) {
+            return res.status(404).json({ message: "Policy not found" });
+        }
+
+        res.status(200).json(policy);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching policy", error });
     }
 }
